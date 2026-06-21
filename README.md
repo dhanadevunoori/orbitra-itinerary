@@ -1,12 +1,13 @@
 # ✈️ Orbitra — AI-Powered Travel Planner
 
-> A full-stack MERN application that uses **Groq LLaMA 3 AI** to generate personalised travel itineraries — with trip sharing, PDF upload, and drag-and-drop functionality.
+> A full-stack MERN application that uses **Groq's LLaMA 3.3 70B model** to generate personalised travel itineraries — with PDF text extraction, image OCR, JWT authentication, and shareable trip links.
 
 [![Live Frontend](https://img.shields.io/badge/Live%20Frontend-Vercel-brightgreen?style=for-the-badge&logo=vercel)](https://orbitra-itinerary.vercel.app)
 [![Live Backend](https://img.shields.io/badge/Live%20Backend-Render-blue?style=for-the-badge&logo=render)](https://orbitra-backend-75je.onrender.com)
 [![React](https://img.shields.io/badge/React.js-Vite-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org)
 [![Node.js](https://img.shields.io/badge/Node.js-Express-green?style=for-the-badge&logo=node.js)](https://nodejs.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb)](https://www.mongodb.com)
+[![Groq](https://img.shields.io/badge/AI-Groq%20LLaMA%203.3-F55036?style=for-the-badge)](https://groq.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
 ---
@@ -21,11 +22,11 @@
 
 ---
 
-## 💡 Why We Built This
+## 💡 Why I Built This
 
-Planning a trip involves hours of research across dozens of tabs. We built Orbitra to solve that — give it your destination, dates, and preferences, and the AI generates a complete personalised itinerary in seconds.
+Planning a trip involves hours of research across dozens of tabs. Orbitra solves that — describe your trip (or upload travel documents you already have), and the AI generates a complete personalised itinerary in seconds.
 
-This project covers the full MERN stack lifecycle: system design → AI API integration → JWT authentication → file upload → cloud deployment.
+This project covers the full MERN stack lifecycle: system design → document processing → AI API integration → JWT authentication → cloud deployment.
 
 ---
 
@@ -37,11 +38,13 @@ User (Browser)
      ▼
 React.js + Vite Frontend  ──►  Node.js / Express.js REST API
      │                                    │
-     │                          ┌─────────┴──────────┐
-     │                     MongoDB Atlas         Groq AI API
-     │                     (User data,           (LLaMA 3 —
-     │                      trip history)         itinerary
-     │                                            generation)
+     │                          ┌─────────┴──────────────────┐
+     │                     MongoDB Atlas              Groq API
+     │                     (User data,           (llama-3.3-70b-versatile —
+     │                      trip history)          itinerary generation)
+     │                                    │
+     │                          pdf-parse (PDFs) / Tesseract.js (images)
+     │                          — document text extraction pipeline
      │
   Vercel                                       Render
 (Frontend deploy)                         (Backend deploy)
@@ -53,24 +56,27 @@ React.js + Vite Frontend  ──►  Node.js / Express.js REST API
 
 | Layer | Technology |
 |---|---|
-| Frontend | React.js, Vite |
-| Backend | Node.js, Express.js |
-| Database | MongoDB Atlas |
-| AI Engine | Groq API (LLaMA 3) |
-| Authentication | JWT (JSON Web Tokens) |
-| File Handling | PDF / Image upload, drag and drop |
+| Frontend | React 18, Vite |
+| Backend | Node.js, Express 4 |
+| Database | MongoDB Atlas (Mongoose 8) |
+| AI Engine | Groq SDK — `llama-3.3-70b-versatile` |
+| Authentication | JWT (`jsonwebtoken`), `bcryptjs` |
+| File Upload | Multer, `react-dropzone` (drag-and-drop) |
+| Document Processing | `pdf-parse` (PDF text extraction), `tesseract.js` (image OCR) |
 | Frontend Deploy | Vercel |
 | Backend Deploy | Render |
+
+> **Note on document processing:** PDFs and images are handled by two different mechanisms. Uploaded **PDFs** go through `pdf-parse`, which extracts embedded text directly. Uploaded **images** go through `tesseract.js`, which performs true optical character recognition. This distinction matters because PDF text extraction and OCR solve different problems — one reads existing digital text, the other recognizes text in a picture.
 
 ---
 
 ## ✨ Features
 
-- 🤖 **AI Itinerary Generation** — Groq LLaMA 3 generates personalised day-by-day travel plans
-- 🔐 **JWT Authentication** — secure user registration, login, and session management
-- 📄 **PDF / Image Upload** — drag-and-drop or click to upload travel documents and photos
+- 🤖 **AI Itinerary Generation** — Groq's `llama-3.3-70b-versatile` generates personalised day-by-day travel plans
+- 🔐 **JWT Authentication** — secure user registration, login, and session management with `bcryptjs` password hashing
+- 📄 **Document Upload & Parsing** — drag-and-drop (via `react-dropzone`) PDF/image upload, with PDF text extraction and image OCR feeding context into itinerary generation
 - 📋 **Trip History** — all generated itineraries saved and accessible per user
-- 🔗 **Share Itineraries** — share trips via unique links
+- 🔗 **Share Itineraries** — share trips via unique public token links
 - 🔒 **Public / Private Toggle** — control who can view each itinerary
 - 📱 **Responsive Design** — fully functional across desktop and mobile
 
@@ -134,7 +140,7 @@ npm run dev
 ### Itineraries
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/itinerary/generate` | Generate AI itinerary (Groq LLaMA 3) |
+| POST | `/api/itinerary/generate` | Generate AI itinerary (Groq `llama-3.3-70b-versatile`) |
 | GET | `/api/itinerary/history` | Get all saved itineraries for user |
 | PUT | `/api/itinerary/:id/visibility` | Toggle public/private |
 | GET | `/api/itinerary/share/:id` | Get shared itinerary (public) |
@@ -144,12 +150,16 @@ npm run dev
 
 ---
 
-## 👩‍💻 Contributors
+## 🧹 Maintenance Note
 
-Built collaboratively by the Orbitra team.
+This repo's `package.json` previously listed `@google/generative-ai`, `openai`, and `sharp` as dependencies from early experimentation with alternative AI providers and image processing. These are not imported or used anywhere in the current codebase — Groq is the sole active AI provider. They will be removed in a future cleanup pass (`npm uninstall @google/generative-ai openai sharp`) to keep the dependency list accurate.
 
-- **Devunoori Dhanalaxmi** — [LinkedIn](https://linkedin.com/in/dhanadevunoori-b295a9293) · [GitHub](https://github.com/dhanadevunoori)
-- 📧 dhanadevunoori@gmail.com
+---
+
+## 👩‍💻 Author
+
+**Dhanalaxmi Devunoori** — [LinkedIn](https://linkedin.com/in/dhanadevunoori-b295a9293) · [GitHub](https://github.com/dhanadevunoori)
+📧 dhanadevunoori@gmail.com
 
 ---
 
